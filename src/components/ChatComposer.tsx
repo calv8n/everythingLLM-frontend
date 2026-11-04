@@ -10,6 +10,7 @@ const EXAMPLES = [
 interface Props {
   provider: LLMProvider;
   onProviderChange: (provider: LLMProvider) => void;
+  showOllama: boolean;
   disabled: boolean;
   isEmpty: boolean;
   onSubmit: (
@@ -25,6 +26,7 @@ const DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b";
 export default function ChatComposer({
   provider,
   onProviderChange,
+  showOllama,
   disabled,
   isEmpty,
   onSubmit,
@@ -55,23 +57,33 @@ export default function ChatComposer({
 
   return (
     <div className="chat-composer-wrap">
-      <div className="provider-selector" role="group" aria-label="Choose language model provider">
-        <button
-          type="button"
-          aria-pressed={provider === "ollama"}
-          disabled={disabled}
-          onClick={() => onProviderChange("ollama")}
-        >
-          Ollama · local
-        </button>
-        <button
-          type="button"
-          aria-pressed={provider === "groq"}
-          disabled={disabled}
-          onClick={() => onProviderChange("groq")}
-        >
-          Groq · API
-        </button>
+      <div
+        className="provider-selector"
+        role={showOllama ? "group" : undefined}
+        aria-label="Choose language model provider"
+      >
+        {showOllama ? (
+          <>
+            <button
+              type="button"
+              aria-pressed={provider === "ollama"}
+              disabled={disabled}
+              onClick={() => onProviderChange("ollama")}
+            >
+              Ollama · local
+            </button>
+            <button
+              type="button"
+              aria-pressed={provider === "groq"}
+              disabled={disabled}
+              onClick={() => onProviderChange("groq")}
+            >
+              Groq · API
+            </button>
+          </>
+        ) : (
+          <span className="provider-selector-current">Groq · API</span>
+        )}
       </div>
       {isEmpty && (
         <div className="chat-suggestions" aria-label="Suggested prompts">

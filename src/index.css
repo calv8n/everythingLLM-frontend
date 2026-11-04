@@ -155,6 +155,7 @@ button { cursor: pointer; }
 .provider-selector button { padding: 6px 11px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 11px; transition: background 150ms ease, color 150ms ease; }
 .provider-selector button[aria-pressed="true"] { background: var(--panel-hover); color: var(--text); box-shadow: 0 1px 3px #00000020; }
 .provider-selector button:disabled { cursor: not-allowed; opacity: .6; }
+.provider-selector-current { padding: 6px 11px; border-radius: 999px; background: var(--panel-hover); color: var(--text); font-size: 11px; }
 .groq-credentials { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0 0 10px; padding: 10px 13px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-bg); }
 .groq-credentials .chat-api-key { flex: 1 1 230px; justify-content: space-between; margin: 0; }
 .groq-credentials .chat-api-key input { width: min(62%, 300px); }

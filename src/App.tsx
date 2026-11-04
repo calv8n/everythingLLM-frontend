@@ -15,7 +15,10 @@ function readSavedTheme(): Theme {
 }
 
 export default function App() {
-  const [provider, setProvider] = useState<LLMProvider>("ollama");
+  const showOllama = !import.meta.env.PROD;
+  const [provider, setProvider] = useState<LLMProvider>(
+    () => showOllama ? "ollama" : "groq",
+  );
   const [theme, setTheme] = useState<Theme>(readSavedTheme);
   const { phase, conversation, submitTask, submitFollowUp, reset } = useTaskExecution();
   const isEmpty = conversation.length === 0;
@@ -134,6 +137,7 @@ export default function App() {
             <ChatComposer
               provider={provider}
               onProviderChange={setProvider}
+              showOllama={showOllama}
               disabled={isBusy}
               isEmpty={isEmpty}
               onSubmit={sendMessage}

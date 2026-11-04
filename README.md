@@ -31,7 +31,7 @@ npm run preview
 
 ## Provider selection
 
-The composer allows the user to select **Ollama · local** or **Groq · API** in development and production builds.
+The development server allows selecting **Ollama · local** or **Groq · API**. Production builds default to Groq and show only the Groq option; the backend independently rejects Ollama requests in production.
 
 - Ollama uses the backend-configured Ollama model.
 - Groq requires both an API key and model name. The browser prevents submission if either value is blank or the required Groq fields are not mounted; the backend independently validates both fields.
