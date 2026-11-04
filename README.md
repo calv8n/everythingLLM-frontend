@@ -19,6 +19,8 @@ npm run dev
 
 Vite serves the frontend at `http://localhost:5173`. Its development proxy forwards `/api` requests and `/ws` WebSocket connections to the backend at port 8000, as configured in `vite.config.ts`.
 
+If the backend requires bearer authentication, set `DEMO_TOKEN` in `frontend/.env.local`. Vite adds it to proxied API and WebSocket requests on the server side; it is not included in the frontend bundle. Do not commit the token.
+
 Build, lint, and preview a production build:
 
 ```bash
@@ -60,6 +62,8 @@ Task creation uses `POST /api/task` with JSON fields:
 ```
 
 For Ollama, send `"provider": "ollama"` and omit the Groq fields. The response includes `task_id` and `session_id`. Connect to `/ws/{task_id}` to receive task events. Frontend event and artifact types are maintained in `src/types/events.ts`.
+
+The frontend displays the result text from the WebSocket `result` event and previews or downloads its files. If the event has no file payloads, it loads the persisted file list from `GET /api/task/{task_id}/files`; file links are served by `GET /api/task/{task_id}/files/{file_name}`.
 
 ## Source layout
 

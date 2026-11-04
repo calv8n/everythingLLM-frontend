@@ -2,9 +2,12 @@ export type Phase = "idle" | "planning" | "code" | "executing" | "result" | "err
 
 export interface FilePayload {
     name: string;
-    type: string;
+    type?: string;
     encoding?: "base64";
-    data: string; //base64
+    data?: string;
+    url?: string;
+    size?: number;
+    kind?: string;
 }
 
 export interface WSEvent {
@@ -16,6 +19,7 @@ export interface WSEvent {
 export interface TaskResult {
     text: string;
     files: FilePayload[];
+    filesError?: string;
 }
 
 export interface ConversationMessage {

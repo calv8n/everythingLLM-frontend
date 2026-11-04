@@ -15,6 +15,36 @@ export interface CreatedTask {
     sessionId: string;
 }
 
+export interface TaskFileReference {
+    name: string;
+    url: string;
+    size: number;
+}
+
+export async function fetchTaskFiles(taskId: string): Promise<TaskFileReference[]> {
+    const res = await fetch(`/api/task/${encodeURIComponent(taskId)}/files`);
+    if (!res.ok) {
+        throw new Error(`Failed to load task files: ${res.status} ${res.statusText}`);
+    }
+
+    const payload: unknown = await res.json();
+    if (typeof payload !== "object" || payload === null || !("files" in payload) || !Array.isArray(payload.files)) {
+        throw new Error("The task file response had an invalid format.");
+    }
+
+    return payload.files.map((file: unknown) => {
+        if (
+            typeof file !== "object" || file === null ||
+            !("name" in file) || typeof file.name !== "string" ||
+            !("url" in file) || typeof file.url !== "string" ||
+            !("size" in file) || typeof file.size !== "number"
+        ) {
+            throw new Error("The task file response contained an invalid file entry.");
+        }
+        return { name: file.name, url: file.url, size: file.size };
+    });
+}
+
 export type LLMProvider = "ollama" | "groq";
 
 export async function createTask(

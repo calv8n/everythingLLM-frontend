@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { Phase, WSEvent, TaskResult, ConversationMessage } from "../types/events";
-import { createTask, connectWebSocket, type LLMProvider } from "../lib/api";
+import { createTask, connectWebSocket, fetchTaskFiles, type LLMProvider } from "../lib/api";
 
 
 export function useTaskExecution() {
@@ -15,6 +15,7 @@ export function useTaskExecution() {
     const wsRef = useRef<WebSocket | null>(null);
     const terminalEventRef = useRef(false);
     const sessionIdRef = useRef<string | null>(null);
+    const activeTaskIdRef = useRef<string | null>(null);
     const groqApiKeyRef = useRef<string | undefined>(undefined);
     const groqModelRef = useRef<string | undefined>(undefined);
     const providerRef = useRef<LLMProvider>("ollama");
@@ -25,6 +26,7 @@ export function useTaskExecution() {
             wsRef.current?.close(1000, "Task view closed");
             wsRef.current = null;
             sessionIdRef.current = null;
+            activeTaskIdRef.current = null;
             groqApiKeyRef.current = undefined;
             groqModelRef.current = undefined;
         };
@@ -39,6 +41,7 @@ export function useTaskExecution() {
         isFollowUp = false,
     ) => {
         // Reset State
+        activeTaskIdRef.current = null;
         setPlanningText("");
         setCode("");
         setLogs([]);
@@ -82,6 +85,7 @@ export function useTaskExecution() {
 
         try {
             const task = await createTask(prompt, provider, groqApiKey, groqModel, sessionId);
+            activeTaskIdRef.current = task.taskId;
             sessionIdRef.current = task.sessionId;
             const ws = connectWebSocket(task.taskId);
             wsRef.current = ws;
@@ -153,9 +157,9 @@ export function useTaskExecution() {
                         break;
                     case "result": {
                         terminalEventRef.current = true;
-                        const taskResult = {
+                        const taskResult: TaskResult = {
                             text: data.content,
-                            files: data.files || []
+                            files: data.files ?? [],
                         };
                         setResult(taskResult);
                         updateAssistantMessage((message) => ({
@@ -164,6 +168,32 @@ export function useTaskExecution() {
                             result: taskResult,
                         }));
                         setPhase("result");
+                        if (taskResult.files.length === 0) {
+                            void fetchTaskFiles(task.taskId)
+                                .then((files) => {
+                                    if (activeTaskIdRef.current !== task.taskId) return;
+                                    const resultWithFiles = { ...taskResult, files };
+                                    setResult(resultWithFiles);
+                                    updateAssistantMessage((message) => ({
+                                        ...message,
+                                        result: resultWithFiles,
+                                    }));
+                                })
+                                .catch((err: unknown) => {
+                                    if (activeTaskIdRef.current !== task.taskId) return;
+                                    const resultWithError = {
+                                        ...taskResult,
+                                        filesError: err instanceof Error
+                                            ? err.message
+                                            : "Failed to load the task's output files.",
+                                    };
+                                    setResult(resultWithError);
+                                    updateAssistantMessage((message) => ({
+                                        ...message,
+                                        result: resultWithError,
+                                    }));
+                                });
+                        }
                         break;
                     }
                     case "error":
@@ -278,6 +308,7 @@ export function useTaskExecution() {
         setResult(null);
         setError(null);
         setConversation([]);
+        activeTaskIdRef.current = null;
         sessionIdRef.current = null;
         groqApiKeyRef.current = undefined;
         groqModelRef.current = undefined;
