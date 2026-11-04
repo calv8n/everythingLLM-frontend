@@ -1,6 +1,15 @@
+declare const __API_BASE_URL__: string;
+
+const API_BASE_URL = __API_BASE_URL__.replace(/\/+$/, "");
+
+export function backendUrl(path: string): string {
+    if (!API_BASE_URL) return path;
+    return new URL(path, `${API_BASE_URL}/`).toString();
+}
+
 export async function fetchConfig(): Promise<{ provider: string }> {
     try {
-        const res = await fetch("/api/config");
+        const res = await fetch(backendUrl("/api/config"));
         if (!res.ok || !res.headers.get("content-type")?.includes("application/json")) {
             return { provider: "ollama" };
         }
@@ -22,7 +31,7 @@ export interface TaskFileReference {
 }
 
 export async function fetchTaskFiles(taskId: string): Promise<TaskFileReference[]> {
-    const res = await fetch(`/api/task/${encodeURIComponent(taskId)}/files`);
+    const res = await fetch(backendUrl(`/api/task/${encodeURIComponent(taskId)}/files`));
     if (!res.ok) {
         throw new Error(`Failed to load task files: ${res.status} ${res.statusText}`);
     }
@@ -64,7 +73,7 @@ export async function createTask(
         body.session_id = sessionId;
     }
 
-    const res = await fetch("/api/task", {
+    const res = await fetch(backendUrl("/api/task"), {
         method: "POST",
         headers: { "Content-Type": "application/json"},
         body: JSON.stringify(body)
@@ -80,7 +89,13 @@ export async function createTask(
 }
 
 export function connectWebSocket(taskId: string): WebSocket {
+    if (API_BASE_URL) {
+        const url = new URL(`/ws/${encodeURIComponent(taskId)}`, `${API_BASE_URL}/`);
+        url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+        return new WebSocket(url);
+    }
+
     const protocol =  window.location.protocol === "https:" ? "wss" : "ws:";
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/${taskId}`);
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/${encodeURIComponent(taskId)}`);
     return ws
 }

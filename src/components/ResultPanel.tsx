@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { TaskResult } from "../types/events";
+import { backendUrl } from "../lib/api";
 import MarkdownContent from "./MarkdownContent";
 
 interface Props {
@@ -51,7 +52,8 @@ function decodeBase64Utf8(value: string): string {
 }
 
 function inlineUrl(url: string): string {
-  return `${url}${url.includes("?") ? "&" : "?"}inline=true`;
+  const resolvedUrl = backendUrl(url);
+  return `${resolvedUrl}${resolvedUrl.includes("?") ? "&" : "?"}inline=true`;
 }
 
 export default function ResultPanel({ result }: Props) {
@@ -125,7 +127,7 @@ export default function ResultPanel({ result }: Props) {
 }
 
 function FileDownloadLink({ file }: { file: TaskResult["files"][number] }) {
-  const href = file.url ?? (
+  const href = file.url ? backendUrl(file.url) : (
     file.data ? `data:${file.type ?? "application/octet-stream"};base64,${file.data}` : undefined
   );
   if (!href) {

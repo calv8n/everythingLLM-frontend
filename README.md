@@ -17,9 +17,7 @@ npm install
 npm run dev
 ```
 
-Vite serves the frontend at `http://localhost:5173`. Its development proxy forwards `/api` requests and `/ws` WebSocket connections to the backend at port 8000, as configured in `vite.config.ts`.
-
-If the backend requires bearer authentication, set `DEMO_TOKEN` in `frontend/.env.local`. Vite adds it to proxied API and WebSocket requests on the server side; it is not included in the frontend bundle. Do not commit the token.
+Vite serves the frontend at `http://localhost:5173`. During `npm run dev`, its proxy always sends `/api` and `/ws` requests to `http://127.0.0.1:8000`, regardless of API URL environment variables. Production builds send API, WebSocket, and artifact requests to `http://129.225.68.122:8080`; set `VITE_API_BASE_URL` at build time to override that production host.
 
 Build, lint, and preview a production build:
 
@@ -28,6 +26,25 @@ npm run build
 npm run lint
 npm run preview
 ```
+
+## Deploy the production frontend to the VM
+
+The production bundle calls the API at `http://129.225.68.122:8080`. Build it locally, copy `dist/` into the backend deployment directory on the VM, then recreate Caddy:
+
+```bash
+# On your development machine, from the repository root
+cd frontend
+npm ci
+npm run build
+ssh ubuntu@129.225.68.122 'mkdir -p ~/svc/backend/frontend-dist'
+rsync -av --delete dist/ ubuntu@129.225.68.122:~/svc/backend/frontend-dist/
+
+# On the VM
+cd ~/svc/backend
+docker compose up -d --force-recreate caddy
+```
+
+Open `http://129.225.68.122:8080`. The same Caddy instance serves the frontend and proxies `/api`, `/ws`, and `/healthz` to the backend. Rebuild and repeat the `rsync` command whenever you change the frontend. The `frontend-dist/` directory is served read-only and is not included in the backend image.
 
 ## Provider selection
 
