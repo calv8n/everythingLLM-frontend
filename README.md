@@ -27,24 +27,17 @@ npm run lint
 npm run preview
 ```
 
-## Deploy the production frontend to the VM
+## Deploy the production frontend to Vercel
 
-The production bundle calls the API at `http://129.225.68.122:8080`. Build it locally, copy `dist/` into the backend deployment directory on the VM, then recreate Caddy:
+Import the repository into Vercel and set the project root to `frontend`. Use `npm run build` as the build command and `dist` as the output directory. Set this environment variable for Production (and Preview if previews should use the live backend):
 
-```bash
-# On your development machine, from the repository root
-cd frontend
-npm ci
-npm run build
-ssh ubuntu@129.225.68.122 'mkdir -p ~/svc/backend/frontend-dist'
-rsync -av --delete dist/ ubuntu@129.225.68.122:~/svc/backend/frontend-dist/
-
-# On the VM
-cd ~/svc/backend
-docker compose up -d --force-recreate caddy
+```text
+VITE_API_BASE_URL=https://api.example.com
 ```
 
-Open `http://129.225.68.122:8080`. The same Caddy instance serves the frontend and proxies `/api`, `/ws`, and `/healthz` to the backend. Rebuild and repeat the `rsync` command whenever you change the frontend. The `frontend-dist/` directory is served read-only and is not included in the backend image.
+Replace `https://api.example.com` with the HTTPS origin serving your backend. Vercel serves the frontend over HTTPS, so browsers will block requests to the current plain-HTTP API URL (`http://129.225.68.122:8080`) as mixed content. Configure HTTPS for the API first, for example by pointing an API subdomain at the VM and configuring Caddy to serve that hostname.
+
+On the backend, set `FRONTEND_ORIGIN` in `backend/.env.production` to the exact Vercel site origin, such as `https://your-project.vercel.app` (no trailing slash), then restart the backend container. Add any custom Vercel domain as an additional comma-separated origin. CORS is enforced by the backend.
 
 ## Provider selection
 
