@@ -11,7 +11,7 @@ export interface FilePayload {
 }
 
 export interface WSEvent {
-    type: "planning" | "code" | "executing" | "log" | "retry" | "result" | "error";
+    type: "planning" | "code" | "executing" | "log" | "retry" | "result" | "error" | "search_query" | "search_results" | "page_fetched";
     content: string;
     files?: FilePayload[];
 }

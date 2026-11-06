@@ -37,11 +37,13 @@ export default function App() {
     selectedProvider: LLMProvider,
     groqApiKey?: string,
     groqModel?: string,
+    webSearch?: boolean,
+    searchProvider?: string,
   ) => {
     if (phase === "idle") {
-      submitTask(prompt, selectedProvider, groqApiKey, groqModel);
+      submitTask(prompt, selectedProvider, groqApiKey, groqModel, webSearch, searchProvider);
     } else {
-      submitFollowUp(prompt, selectedProvider, groqApiKey, groqModel);
+      submitFollowUp(prompt, selectedProvider, groqApiKey, groqModel, webSearch, searchProvider);
     }
   };
 

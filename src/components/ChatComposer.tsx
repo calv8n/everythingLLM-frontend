@@ -7,6 +7,8 @@ const EXAMPLES = [
   "Make a chart comparing the top 10 countries by population",
 ];
 
+type SearchProvider = "duckduckgo" | "searxng" | "tavily";
+
 interface Props {
   provider: LLMProvider;
   onProviderChange: (provider: LLMProvider) => void;
@@ -18,6 +20,8 @@ interface Props {
     provider: LLMProvider,
     groqApiKey?: string,
     groqModel?: string,
+    webSearch?: boolean,
+    searchProvider?: string,
   ) => void;
 }
 
@@ -34,6 +38,8 @@ export default function ChatComposer({
   const [prompt, setPrompt] = useState("");
   const [groqApiKey, setGroqApiKey] = useState("");
   const [groqModel, setGroqModel] = useState(DEFAULT_GROQ_MODEL);
+  const [webSearch, setWebSearch] = useState(false);
+  const [searchProvider, setSearchProvider] = useState<SearchProvider>("duckduckgo");
   const apiKeyInputRef = useRef<HTMLInputElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
   const isGroq = provider === "groq";
@@ -51,6 +57,8 @@ export default function ChatComposer({
       provider,
       isGroq ? groqApiKey.trim() : undefined,
       isGroq ? groqModel.trim() : undefined,
+      webSearch,
+      webSearch ? searchProvider : undefined,
     );
     setPrompt("");
   };
@@ -129,6 +137,31 @@ export default function ChatComposer({
           </label>
         </div>
       )}
+      <div className="research-controls" aria-label="Web-search settings">
+        <label className="research-toggle">
+          <input
+            type="checkbox"
+            checked={webSearch}
+            onChange={(event) => setWebSearch(event.target.checked)}
+            aria-label="Enable web search"
+          />
+          <span>Web search</span>
+        </label>
+        {webSearch && (
+          <label className="research-provider">
+            <span>Provider</span>
+            <select
+              value={searchProvider}
+              onChange={(event) => setSearchProvider(event.target.value as SearchProvider)}
+              aria-label="Search provider"
+            >
+              <option value="duckduckgo">DuckDuckGo</option>
+              <option value="searxng">SearXNG</option>
+              <option value="tavily">Tavily</option>
+            </select>
+          </label>
+        )}
+      </div>
       <form
         className="chat-composer"
         onSubmit={(event) => {

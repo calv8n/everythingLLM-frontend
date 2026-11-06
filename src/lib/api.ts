@@ -61,8 +61,11 @@ export async function createTask(
     provider: LLMProvider,
     groqApiKey?: string,
     groqModel?: string,
-    sessionId?: string): Promise<CreatedTask>{
-    const body: Record<string, string> = { prompt, provider };
+    sessionId?: string,
+    webSearch?: boolean,
+    searchProvider?: string,
+): Promise<CreatedTask>{
+    const body: Record<string, string | boolean> = { prompt, provider, web_search: Boolean(webSearch) };
     if (groqApiKey) {
         body.groq_api_key = groqApiKey;
     }
@@ -71,6 +74,9 @@ export async function createTask(
     }
     if (sessionId) {
         body.session_id = sessionId;
+    }
+    if (webSearch && searchProvider) {
+        body.search_provider = searchProvider;
     }
 
     const res = await fetch(backendUrl("/api/task"), {

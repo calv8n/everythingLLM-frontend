@@ -39,6 +39,8 @@ export function useTaskExecution() {
         groqModel?: string,
         sessionId?: string,
         isFollowUp = false,
+        webSearch = false,
+        searchProvider?: string,
     ) => {
         // Reset State
         activeTaskIdRef.current = null;
@@ -84,7 +86,7 @@ export function useTaskExecution() {
         };
 
         try {
-            const task = await createTask(prompt, provider, groqApiKey, groqModel, sessionId);
+            const task = await createTask(prompt, provider, groqApiKey, groqModel, sessionId, webSearch, searchProvider);
             activeTaskIdRef.current = task.taskId;
             sessionIdRef.current = task.sessionId;
             const ws = connectWebSocket(task.taskId);
@@ -139,6 +141,34 @@ export function useTaskExecution() {
                         updateAssistantMessage((message) => ({
                             ...message,
                             logs: [...(message.logs ?? []), data.content],
+                        }));
+                        break;
+                    case "search_query":
+                        setPlanningText((prev) => prev + `\n**Searching:** ${data.content}\n`);
+                        updateAssistantMessage((message) => ({
+                            ...message,
+                            stage: "planning",
+                            planningText: (message.planningText ?? "") + `\n**Searching:** ${data.content}\n`,
+                        }));
+                        setPhase("planning");
+                        break;
+                    case "search_results": {
+                        const payload = typeof data.content === "string" ? data.content : "";
+                        const searchSummary = payload ? `\n**Search sources**\n${payload}\n` : "\n**Search sources**\n";
+                        setPlanningText((prev) => prev + searchSummary);
+                        updateAssistantMessage((message) => ({
+                            ...message,
+                            stage: "planning",
+                            planningText: (message.planningText ?? "") + searchSummary,
+                        }));
+                        break;
+                    }
+                    case "page_fetched":
+                        setPlanningText((prev) => prev + `\n**Fetched page:** ${data.content}\n`);
+                        updateAssistantMessage((message) => ({
+                            ...message,
+                            stage: "planning",
+                            planningText: (message.planningText ?? "") + `\n**Fetched page:** ${data.content}\n`,
                         }));
                         break;
                     case "retry":
@@ -258,12 +288,14 @@ export function useTaskExecution() {
         provider: LLMProvider,
         groqApiKey?: string,
         groqModel?: string,
+        webSearch = false,
+        searchProvider?: string,
     ) => {
         sessionIdRef.current = null;
         providerRef.current = provider;
         groqApiKeyRef.current = groqApiKey;
         groqModelRef.current = groqModel;
-        void startTask(prompt, provider, groqApiKey, groqModel, undefined, false);
+        void startTask(prompt, provider, groqApiKey, groqModel, undefined, false, webSearch, searchProvider);
     }, [startTask]);
 
     const submitFollowUp = useCallback((
@@ -271,6 +303,8 @@ export function useTaskExecution() {
         provider: LLMProvider,
         groqApiKey?: string,
         groqModel?: string,
+        webSearch = false,
+        searchProvider?: string,
     ) => {
         if (!sessionIdRef.current) {
             setError("This task session has expired. Start a new task to continue.");
@@ -292,6 +326,8 @@ export function useTaskExecution() {
             groqModelRef.current,
             sessionIdRef.current,
             true,
+            webSearch,
+            searchProvider,
         );
     }, [startTask]);
 
